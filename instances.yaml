@@ -1,0 +1,37 @@
+---
+- name: Create a new EC2 instance for Git, Jenkins and Docker
+  hosts: localhost
+  gather_facts: False
+  vars:
+      region: ap-southeast-1
+      instance_type: t2.micro
+      ami: ami-0cd31be676780afa7	# Amazon linux AMI
+      keypair: Ansible-KP	# pem file name
+      security_group: ansible-sg	# security group name
+      subnet_id: subnet-13a07475
+
+  tasks:
+    - name: "Creating EC2 Instances" 
+      ec2:
+          key_name: "{{ keypair }}"
+          group: "{{ security_group }}"
+          instance_type: "{{ instance_type }}"
+          image: "{{ ami }}"
+          wait: true
+          region: "{{ region }}"
+          instance_tags:
+              Name: "{{ item }}"
+          vpc_subnet_id: "{{ subnet_id }}"
+          assign_public_ip: yes
+      register: ec2 
+      with_items:
+          - git
+          - jenkins
+          - docker
+    - debug:
+        msg: "Git Public IP:{{ec2.results[0].instances[0].public_ip }}"
+    - debug:
+        msg: "Jenkins Public IP: {{ec2.results[1].instances[0].public_ip }}"
+    - debug:
+        msg: "Docker Public IP: {{ec2.results[2].instances[0].public_ip }}"
+
